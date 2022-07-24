@@ -8,6 +8,3 @@ cd h3xo-dmenu
 make
 sudo make install
 ```
-
-## Arch installation
-Instead of `make` and `sudo make install` run `makepkg -si`.
