@@ -295,7 +295,7 @@ insert(const char *str, ssize_t n)
 	match();
 
 	if(!matches && reject_no_match) {
-		/* revert to last text value if theres no match */
+		/* revert to last text value if there's no match */
 		memcpy(text, last, BUFSIZ);
 		cursor -= n;
 		match();
