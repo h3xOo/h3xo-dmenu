@@ -3,6 +3,9 @@
 #ifndef DRW_H__
 #define DRW_H__
 
+#include <X11/Xft/Xft.h>
+#include <X11/Xlib.h>
+
 typedef struct {
 	Cursor cursor;
 } Cur;
