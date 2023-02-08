@@ -3,7 +3,9 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <stdio.h>
 #include <X11/Xlib.h>
+
 
 #include "drw.h"
 
