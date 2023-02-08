@@ -1,19 +1,19 @@
 #ifndef DMENU_H__
 #define DMENU_H__
 
-#include <stddef.h>
-#include <string.h>
-#include <stdio.h>
 #include <X11/Xlib.h>
-
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "drw.h"
 
 /* macros */
-#define INTERSECT(x,y,w,h,r)  (MAX(0, MIN((x)+(w),(r).x_org+(r).width)  - MAX((x),(r).x_org)) \
-                             && MAX(0, MIN((y)+(h),(r).y_org+(r).height) - MAX((y),(r).y_org)))
-#define LENGTH(X)             (sizeof X / sizeof X[0])
-#define TEXTW(X)              (drw_fontset_getwidth(drw, (X)) + lrpad)
+#define INTERSECT(x, y, w, h, r)                                               \
+    (MAX(0, MIN((x) + (w), (r).x_org + (r).width) - MAX((x), (r).x_org)) &&    \
+     MAX(0, MIN((y) + (h), (r).y_org + (r).height) - MAX((y), (r).y_org)))
+#define LENGTH(X) (sizeof X / sizeof X[0])
+#define TEXTW(X) (drw_fontset_getwidth(drw, (X)) + lrpad)
 
 /* define opaqueness */
 #define OPAQUE 0xFFU
@@ -22,9 +22,9 @@
 enum { SchemeNorm, SchemeSel, SchemeOut, SchemeLast }; /* color schemes */
 
 struct item {
-	char *text;
-	struct item *left, *right;
-	int out;
+    char *text;
+    struct item *left, *right;
+    int out;
 };
 
 static char text[BUFSIZ] = "";
@@ -50,7 +50,6 @@ static Visual *visual;
 static int depth;
 static Colormap cmap;
 static Clr *scheme[SchemeLast];
-
 
 static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
 static char *(*fstrstr)(const char *, const char *) = strstr;
