@@ -284,7 +284,6 @@ int drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h,
             /* shorten text if necessary */
             for (len = MIN(utf8strlen, sizeof(buf) - 1); len && ew > w; len--)
                 drw_font_getexts(usedfont, utf8str, len, &ew, NULL);
-
             if (len) {
                 memcpy(buf, utf8str, len);
                 buf[len] = '\0';
