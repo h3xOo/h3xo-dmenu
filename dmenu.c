@@ -23,13 +23,14 @@
 #include "config.h"
 #include "dmenu.h"
 
-static void xinitvisual() {
-    XVisualInfo *infos;
-    XRenderPictFormat *fmt;
+static void xinitvisual()
+{
+    XVisualInfo* infos;
+    XRenderPictFormat* fmt;
     int nitems;
     int i;
 
-    XVisualInfo tpl = {.screen = screen, .depth = 32, .class = TrueColor};
+    XVisualInfo tpl = { .screen = screen, .depth = 32, .class = TrueColor };
 
     long masks = VisualScreenMask | VisualDepthMask | VisualClassMask;
 
@@ -56,13 +57,15 @@ static void xinitvisual() {
     }
 }
 
-static unsigned int textw_clamp(const char *str, unsigned int n) {
+static unsigned int textw_clamp(const char* str, unsigned int n)
+{
     unsigned int w = drw_fontset_getwidth_clamp(drw, str, n) + lrpad;
     return MIN(w, n);
 }
 
-static void appenditem(struct item *item, struct item **list,
-                       struct item **last) {
+static void appenditem(struct item* item, struct item** list,
+    struct item** last)
+{
     if (*last)
         (*last)->right = item;
     else
@@ -73,7 +76,8 @@ static void appenditem(struct item *item, struct item **list,
     *last = item;
 }
 
-static void calcoffsets(void) {
+static void calcoffsets(void)
+{
     int i, n;
 
     if (lines > 0)
@@ -89,7 +93,8 @@ static void calcoffsets(void) {
             break;
 }
 
-static void cleanup(void) {
+static void cleanup(void)
+{
     size_t i;
 
     XUngrabKey(dpy, AnyKey, AnyModifier, root);
@@ -103,24 +108,25 @@ static void cleanup(void) {
     XCloseDisplay(dpy);
 }
 
-static char *cistrstr(const char *h, const char *n) {
+static char* cistrstr(const char* h, const char* n)
+{
     size_t i = 0;
 
     if (!n[0])
-        return (char *)h;
+        return (char*)h;
 
     for (; *h; h++) {
-        for (i = 0; n[i] && tolower((unsigned char)n[i]) ==
-                                tolower((unsigned char)h[i]);
+        for (i = 0; n[i] && tolower((unsigned char)n[i]) == tolower((unsigned char)h[i]);
              ++i)
             ;
         if (n[i] == '\0')
-            return (char *)h;
+            return (char*)h;
     }
     return NULL;
 }
 
-static int drawitem(struct item *item, int x, int y, int w) {
+static int drawitem(struct item* item, int x, int y, int w)
+{
     if (item == sel)
         drw_setscheme(drw, scheme[SchemeSel]);
     else if (item->out)
@@ -131,11 +137,12 @@ static int drawitem(struct item *item, int x, int y, int w) {
     return drw_text(drw, x, y, w, bh, lrpad / 2, item->text, 0);
 }
 
-static void drawmenu(void) {
+static void drawmenu(void)
+{
     unsigned int curpos;
-    struct item *item;
+    struct item* item;
     int x = 0, y = 0, w;
-    char *censort;
+    char* censort;
 
     drw_setscheme(drw, scheme[SchemeNorm]);
     drw_rect(drw, 0, 0, mw, mh, 1, 1);
@@ -176,7 +183,7 @@ static void drawmenu(void) {
         x += w;
         for (item = curr; item != next; item = item->right)
             x = drawitem(item, x, 0,
-                         textw_clamp(item->text, mw - x - TEXTW(">")));
+                textw_clamp(item->text, mw - x - TEXTW(">")));
         if (next) {
             w = TEXTW(">");
             drw_setscheme(drw, scheme[SchemeNorm]);
@@ -186,8 +193,9 @@ static void drawmenu(void) {
     drw_map(drw, win, 0, 0, mw, mh);
 }
 
-static void grabfocus(void) {
-    struct timespec ts = {.tv_sec = 0, .tv_nsec = 10000000};
+static void grabfocus(void)
+{
+    struct timespec ts = { .tv_sec = 0, .tv_nsec = 10000000 };
     Window focuswin;
     int i, revertwin;
 
@@ -201,8 +209,9 @@ static void grabfocus(void) {
     die("cannot grab focus");
 }
 
-static void grabkeyboard(void) {
-    struct timespec ts = {.tv_sec = 0, .tv_nsec = 1000000};
+static void grabkeyboard(void)
+{
+    struct timespec ts = { .tv_sec = 0, .tv_nsec = 1000000 };
     int i;
 
     if (embed)
@@ -211,15 +220,17 @@ static void grabkeyboard(void) {
      */
     for (i = 0; i < 1000; i++) {
         if (XGrabKeyboard(dpy, DefaultRootWindow(dpy), True, GrabModeAsync,
-                          GrabModeAsync, CurrentTime) == GrabSuccess)
+                GrabModeAsync, CurrentTime)
+            == GrabSuccess)
             return;
         nanosleep(&ts, NULL);
     }
     die("cannot grab keyboard");
 }
 
-static void match(void) {
-    static char **tokv = NULL;
+static void match(void)
+{
+    static char** tokv = NULL;
     static int tokn = 0;
 
     char buf[sizeof text], *s;
@@ -270,7 +281,8 @@ static void match(void) {
     calcoffsets();
 }
 
-static void insert(const char *str, ssize_t n) {
+static void insert(const char* str, ssize_t n)
+{
     if (strlen(text) + n > sizeof text - 1)
         return;
 
@@ -295,7 +307,8 @@ static void insert(const char *str, ssize_t n) {
     }
 }
 
-static size_t nextrune(int inc) {
+static size_t nextrune(int inc)
+{
     ssize_t n;
 
     /* return location of next utf8 rune in the given direction (+1 or -1) */
@@ -304,7 +317,8 @@ static size_t nextrune(int inc) {
     return n;
 }
 
-static void movewordedge(int dir) {
+static void movewordedge(int dir)
+{
     if (dir < 0) { /* move cursor to the start of the word*/
         while (cursor > 0 && strchr(worddelimiters, text[nextrune(-1)]))
             cursor = nextrune(-1);
@@ -318,7 +332,8 @@ static void movewordedge(int dir) {
     }
 }
 
-static void keypress(XKeyEvent *ev) {
+static void keypress(XKeyEvent* ev)
+{
     char buf[64];
     int len;
     KeySym ksym = NoSymbol;
@@ -394,7 +409,7 @@ static void keypress(XKeyEvent *ev) {
         case XK_y: /* paste selection */
         case XK_Y:
             XConvertSelection(dpy, (ev->state & ShiftMask) ? clip : XA_PRIMARY,
-                              utf8, utf8, win, CurrentTime);
+                utf8, utf8, win, CurrentTime);
             return;
         case XK_Left:
             movewordedge(-1);
@@ -549,9 +564,10 @@ draw:
     drawmenu();
 }
 
-static void buttonpress(XEvent *e) {
-    struct item *item;
-    XButtonPressedEvent *ev = &e->xbutton;
+static void buttonpress(XEvent* e)
+{
+    struct item* item;
+    XButtonPressedEvent* ev = &e->xbutton;
     int x = 0, y = 0, h = bh, w;
 
     if (ev->window != win)
@@ -570,10 +586,7 @@ static void buttonpress(XEvent *e) {
     /* left-click on input: clear input,
      * NOTE: if there is no left-arrow the space for < is reserved so
      *       add that to the input width */
-    if (ev->button == Button1 &&
-        ((lines <= 0 && ev->x >= 0 &&
-          ev->x <= x + w + ((!prev || !curr->left) ? TEXTW("<") : 0)) ||
-         (lines > 0 && ev->y >= y && ev->y <= y + h))) {
+    if (ev->button == Button1 && ((lines <= 0 && ev->x >= 0 && ev->x <= x + w + ((!prev || !curr->left) ? TEXTW("<") : 0)) || (lines > 0 && ev->y >= y && ev->y <= y + h))) {
         insert(NULL, -cursor);
         drawmenu();
         return;
@@ -581,7 +594,7 @@ static void buttonpress(XEvent *e) {
     /* middle-mouse click: paste selection */
     if (ev->button == Button2) {
         XConvertSelection(dpy, (ev->state & ShiftMask) ? clip : XA_PRIMARY,
-                          utf8, utf8, win, CurrentTime);
+            utf8, utf8, win, CurrentTime);
         drawmenu();
         return;
     }
@@ -660,7 +673,8 @@ static void buttonpress(XEvent *e) {
     }
 }
 
-static void paste(void) {
+static void paste(void)
+{
     char *p, *q;
     int di;
     unsigned long dl;
@@ -668,17 +682,19 @@ static void paste(void) {
 
     /* we have been given the current selection, now insert it into input */
     if (XGetWindowProperty(dpy, win, utf8, 0, (sizeof text / 4) + 1, False,
-                           utf8, &da, &di, &dl, &dl,
-                           (unsigned char **)&p) == Success &&
-        p) {
+            utf8, &da, &di, &dl, &dl,
+            (unsigned char**)&p)
+            == Success
+        && p) {
         insert(p, (q = strchr(p, '\n')) ? q - p : (ssize_t)strlen(p));
         XFree(p);
     }
     drawmenu();
 }
 
-static void readstdin(void) {
-    char *line = NULL;
+static void readstdin(void)
+{
+    char* line = NULL;
     size_t i, itemsiz = 0, linesiz = 0;
     ssize_t len;
 
@@ -701,7 +717,8 @@ static void readstdin(void) {
     lines = MIN(lines, i);
 }
 
-static void run(void) {
+static void run(void)
+{
     XEvent ev;
 
     while (!XNextEvent(dpy, &ev)) {
@@ -740,16 +757,17 @@ static void run(void) {
     }
 }
 
-static void setup(void) {
+static void setup(void)
+{
     int x, y, i, j;
     unsigned int du;
     XSetWindowAttributes swa;
     XIM xim;
     Window w, dw, *dws;
     XWindowAttributes wa;
-    XClassHint ch = {"dmenu", "dmenu"};
+    XClassHint ch = { "dmenu", "dmenu" };
 #ifdef XINERAMA
-    XineramaScreenInfo *info;
+    XineramaScreenInfo* info;
     Window pw;
     int a, di, n, area = 0;
 #endif
@@ -781,15 +799,15 @@ static void setup(void) {
             if (XGetWindowAttributes(dpy, pw, &wa))
                 for (j = 0; j < n; j++)
                     if ((a = INTERSECT(wa.x, wa.y, wa.width, wa.height,
-                                       info[j])) > area) {
+                             info[j]))
+                        > area) {
                         area = a;
                         i = j;
                     }
         }
         /* no focused window is on screen, so use pointer location instead
          */
-        if (mon < 0 && !area &&
-            XQueryPointer(dpy, root, &dw, &dw, &x, &y, &di, &di, &du))
+        if (mon < 0 && !area && XQueryPointer(dpy, root, &dw, &dw, &x, &y, &di, &di, &du))
             for (i = 0; i < n; i++)
                 if (INTERSECT(x, y, 1, 1, info[i]) != 0)
                     break;
@@ -816,12 +834,10 @@ static void setup(void) {
     swa.background_pixel = scheme[SchemeNorm][ColBg].pixel;
     swa.border_pixel = 0;
     swa.colormap = cmap;
-    swa.event_mask =
-        ExposureMask | KeyPressMask | VisibilityChangeMask | ButtonPressMask;
+    swa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask | ButtonPressMask;
     win = XCreateWindow(dpy, root, x, y, mw, mh, 0, depth, InputOutput, visual,
-                        CWOverrideRedirect | CWBackPixel | CWColormap |
-                            CWEventMask | CWBorderPixel,
-                        &swa);
+        CWOverrideRedirect | CWBackPixel | CWColormap | CWEventMask | CWBorderPixel,
+        &swa);
     XSetClassHint(dpy, win, &ch);
 
     /* input methods */
@@ -829,7 +845,7 @@ static void setup(void) {
         die("XOpenIM failed: could not open input device");
 
     xic = XCreateIC(xim, XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
-                    XNClientWindow, win, XNFocusWindow, win, NULL);
+        XNClientWindow, win, XNFocusWindow, win, NULL);
 
     XMapRaised(dpy, win);
     if (embed) {
@@ -846,42 +862,40 @@ static void setup(void) {
     drawmenu();
 }
 
-static void usage(void) {
+static void usage(void)
+{
     die("usage: dmenu [-bfiv] [-l lines] [-p prompt] [-fn font] [-m monitor]\n"
         "             [-nb color] [-nf color] [-sb color] [-sf color] [-w "
         "windowid]");
 }
 
-void read_Xresources(void) {
+void read_Xresources(void)
+{
     XrmInitialize();
 
-    char *xrm;
+    char* xrm;
     if ((xrm = XResourceManagerString(drw->dpy))) {
-        char *type;
+        char* type;
         XrmDatabase xdb = XrmGetStringDatabase(xrm);
         XrmValue xval;
 
-        if (XrmGetResource(xdb, "dmenu.font", "*", &type, &xval) ==
-            True) /* font or font set */
+        if (XrmGetResource(xdb, "dmenu.font", "*", &type, &xval) == True) /* font or font set */
             fonts[0] = strdup(xval.addr);
-        if (XrmGetResource(xdb, "dmenu.color0", "*", &type, &xval) ==
-            True) /* normal background color */
+        if (XrmGetResource(xdb, "dmenu.color0", "*", &type, &xval) == True) /* normal background color */
             colors[SchemeNorm][ColBg] = strdup(xval.addr);
-        if (XrmGetResource(xdb, "dmenu.color4", "*", &type, &xval) ==
-            True) /* normal foreground color */
+        if (XrmGetResource(xdb, "dmenu.color4", "*", &type, &xval) == True) /* normal foreground color */
             colors[SchemeNorm][ColFg] = strdup(xval.addr);
-        if (XrmGetResource(xdb, "dmenu.color4", "*", &type, &xval) ==
-            True) /* selected background color */
+        if (XrmGetResource(xdb, "dmenu.color4", "*", &type, &xval) == True) /* selected background color */
             colors[SchemeSel][ColBg] = strdup(xval.addr);
-        if (XrmGetResource(xdb, "dmenu.color0", "*", &type, &xval) ==
-            True) /* selected foreground color */
+        if (XrmGetResource(xdb, "dmenu.color0", "*", &type, &xval) == True) /* selected foreground color */
             colors[SchemeSel][ColFg] = strdup(xval.addr);
 
         XrmDestroyDatabase(xdb);
     }
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
     XWindowAttributes wa;
     int i, fast = 0;
 
@@ -891,10 +905,10 @@ int main(int argc, char *argv[]) {
             puts("dmenu-" VERSION);
             exit(0);
         } else if (!strcmp(argv[i],
-                           "-b")) /* appears at the bottom of the screen */
+                       "-b")) /* appears at the bottom of the screen */
             topbar = 0;
         else if (!strcmp(argv[i],
-                         "-f")) /* grabs keyboard before reading stdin */
+                     "-f")) /* grabs keyboard before reading stdin */
             fast = 1;
         else if (!strcmp(argv[i], "-i")) { /* case-insensitive item matching */
             fstrncmp = strncasecmp;
@@ -902,7 +916,7 @@ int main(int argc, char *argv[]) {
         } else if (!strcmp(argv[i], "-P")) /* is the input a password */
             passwd = 1;
         else if (!strcmp(argv[i],
-                         "-r")) /* reject input which results in no match */
+                     "-r")) /* reject input which results in no match */
             reject_no_match = 1;
         else if (i + 1 == argc)
             usage();
@@ -912,7 +926,7 @@ int main(int argc, char *argv[]) {
         else if (!strcmp(argv[i], "-m"))
             mon = atoi(argv[++i]);
         else if (!strcmp(argv[i],
-                         "-p")) /* adds prompt to left of input field */
+                     "-p")) /* adds prompt to left of input field */
             prompt = argv[++i];
         else if (!strcmp(argv[i], "-fn")) /* font or font set */
             fonts[0] = argv[++i];
@@ -940,8 +954,7 @@ int main(int argc, char *argv[]) {
     if (!XGetWindowAttributes(dpy, parentwin, &wa))
         die("could not get embedding window attributes: 0x%lx", parentwin);
     xinitvisual();
-    drw =
-        drw_create(dpy, screen, root, wa.width, wa.height, visual, depth, cmap);
+    drw = drw_create(dpy, screen, root, wa.width, wa.height, visual, depth, cmap);
     read_Xresources();
     if (!drw_fontset_create(drw, fonts, LENGTH(fonts)))
         die("no fonts could be loaded.");
