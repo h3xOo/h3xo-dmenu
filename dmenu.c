@@ -866,9 +866,8 @@ setup(void)
     swa.background_pixel = scheme[SchemeNorm][ColBg].pixel;
     swa.border_pixel = 0;
     swa.colormap = cmap;
-    swa.event_mask
-        = ExposureMask | KeyPressMask | VisibilityChangeMask | ButtonPressMask;
-    win = XCreateWindow(dpy, parentwin, x, y, mw, mh, 0, depth, InputOutput,
+    swa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask | ButtonPressMask;
+    win = XCreateWindow(dpy, root, x, y, mw, mh, 0, depth, InputOutput,
         visual,
         CWOverrideRedirect | CWBackPixel | CWColormap
             | CWEventMask | CWBorderPixel,
@@ -884,6 +883,7 @@ setup(void)
 
     XMapRaised(dpy, win);
     if (embed) {
+        XReparentWindow(dpy, win, parentwin, x, y);
         XSelectInput(dpy, parentwin,
             FocusChangeMask | SubstructureNotifyMask);
         if (XQueryTree(dpy, parentwin, &dw, &w, &dws, &du) && dws) {
