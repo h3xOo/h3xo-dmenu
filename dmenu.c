@@ -76,7 +76,7 @@ static unsigned int textw_clamp(const char* str, unsigned int n)
 }
 
 
-static void xinitvisual()
+static void xinitvisual(void)
 {
     XVisualInfo* infos;
     XRenderPictFormat* fmt;
