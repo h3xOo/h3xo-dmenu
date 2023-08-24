@@ -58,7 +58,7 @@ static struct item* items = NULL;
 static struct item *matches, *matchend;
 static struct item *prev, *curr, *next, *sel;
 static int mon = -1, screen;
-static unsigned int using_vi_mode = 1;
+static unsigned int using_vi_mode = 0;
 static bool enforces_no_vi_mode = false;
 
 static Atom clip, utf8;

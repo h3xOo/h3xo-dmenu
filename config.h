@@ -38,7 +38,7 @@ static const char worddelimiters[] = " ";
  * accessed with the global_esc keysym + mod mask
  */
 static unsigned int vi_mode = 1;
-static const unsigned int start_mode = 1;			/* mode to use when -vi is passed. 0 = insert mode, 1 = normal mode */
+static const unsigned int start_mode = 0;			/* mode to use when -vi is passed. 0 = insert mode, 1 = normal mode */
 static Key global_esc = { XK_Escape, 0 };	/* escape key when vi mode is not enabled explicitly */
 static const Key quit_keys[] = {
 	/* keysym	modifier */
