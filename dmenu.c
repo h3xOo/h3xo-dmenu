@@ -140,6 +140,13 @@ static void calcoffsets(void)
             break;
 }
 
+static int max_textw(void) {
+    int len = 0;
+    for (struct item* item = items; item && item->text; item++)
+        len = MAX(TEXTW(item->text), len);
+    return len;
+}
+
 static void cleanup(void)
 {
     size_t i;
@@ -829,6 +836,7 @@ static void setup(void)
     bh = drw->fonts->h + 2;
     lines = MAX(lines, 0);
     mh = (lines + 1) * bh;
+    promptw = (prompt && *prompt) ? TEXTW(prompt) - lrpad / 4 : 0;
 #ifdef XINERAMA
     i = 0;
     if (parentwin == root && (info = XineramaQueryScreens(dpy, &n))) {
@@ -859,18 +867,32 @@ static void setup(void)
                 if (INTERSECT(x, y, 1, 1, info[i]) != 0)
                     break;
 
-        x = info[i].x_org;
-        y = info[i].y_org + (topbar ? 0 : info[i].height - mh);
-        mw = info[i].width;
+		if (centered) {
+			mw = MIN(MAX(max_textw() + promptw, min_width), info[i].width);
+			x = info[i].x_org + ((info[i].width  - mw) / 2);
+			y = info[i].y_org + ((info[i].height - mh) / 2);
+		} else {
+			x = info[i].x_org;
+			y = info[i].y_org + (topbar ? 0 : info[i].height - mh);
+			mw = info[i].width;
+		}
+
         XFree(info);
     } else
 #endif
     {
         if (!XGetWindowAttributes(dpy, parentwin, &wa))
             die("could not get embedding window attributes: 0x%lx", parentwin);
-        x = 0;
-        y = topbar ? 0 : wa.height - mh;
-        mw = wa.width;
+
+		if (centered) {
+			mw = MIN(MAX(max_textw() + promptw, min_width), wa.width);
+			x = (wa.width  - mw) / 2;
+			y = (wa.height - mh) / 2;
+		} else {
+			x = 0;
+			y = topbar ? 0 : wa.height - mh;
+			mw = wa.width;
+		}
     }
     promptw = (prompt && *prompt) ? TEXTW(prompt) - lrpad / 4 : 0;
     inputw = mw / 3; /* input width: ~33% of monitor width */
@@ -911,7 +933,7 @@ static void setup(void)
 
 static void usage(void)
 {
-    die("usage: dmenu [-bfiv] [-l lines] [-p prompt] [-fn font] [-m monitor]\n"
+    die("usage: dmenu [-bcfiv] [-l lines] [-p prompt] [-fn font] [-m monitor]\n"
         "             [-nb color] [-nf color] [-sb color] [-sf color] [-w "
         "windowid]");
 }
@@ -951,19 +973,18 @@ int main(int argc, char* argv[])
         if (!strcmp(argv[i], "-v")) { /* prints version information */
             puts("dmenu-" VERSION);
             exit(0);
-        } else if (!strcmp(argv[i],
-                       "-b")) /* appears at the bottom of the screen */
+        } else if (!strcmp(argv[i], "-b")) /* appears at the bottom of the screen */
             topbar = 0;
-        else if (!strcmp(argv[i],
-                     "-f")) /* grabs keyboard before reading stdin */
+        else if (!strcmp(argv[i], "-f")) /* grabs keyboard before reading stdin */
             fast = 1;
+        else if (!strcmp(argv[i], "-c"))   /* centers dmenu on screen */
+			centered = 1;
         else if (!strcmp(argv[i], "-i")) { /* case-insensitive item matching */
             fstrncmp = strncasecmp;
             fstrstr = cistrstr;
         } else if (!strcmp(argv[i], "-P")) /* is the input a password */
             passwd = 1;
-        else if (!strcmp(argv[i],
-                     "-r")) /* reject input which results in no match */
+        else if (!strcmp(argv[i], "-r")) /* reject input which results in no match */
             reject_no_match = 1;
         else if (i + 1 == argc)
             usage();
