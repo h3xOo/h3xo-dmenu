@@ -3,6 +3,7 @@
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <strings.h>
 #include <time.h>
@@ -58,6 +59,7 @@ static struct item *matches, *matchend;
 static struct item *prev, *curr, *next, *sel;
 static int mon = -1, screen;
 static unsigned int using_vi_mode = 1;
+static bool enforces_no_vi_mode = false;
 
 static Atom clip, utf8;
 static Display* dpy;
@@ -220,8 +222,9 @@ static void drawmenu(void)
         memset(censort, '.', strlen(text));
         drw_text(drw, x, 0, w, bh, lrpad / 2, censort, 0);
         free(censort);
-    } else
+    } else {
         drw_text(drw, x, 0, w, bh, lrpad / 2, text, 0);
+    }
 
     curpos = TEXTW(text) - TEXTW(&text[cursor]);
 	curpos += lrpad / 2 - 1;
@@ -955,6 +958,11 @@ static void readstdin(void)
     size_t i, itemsiz = 0, linesiz = 0;
     ssize_t len;
 
+    if (passwd) {
+        inputw = lines = 0;
+        return;
+    }
+
     /* read each line from stdin and add it to the item list */
     for (i = 0; (len = getline(&line, &linesiz, stdin)) != -1; i++) {
         if (i + 1 >= itemsiz) {
@@ -1185,13 +1193,18 @@ int main(int argc, char* argv[])
         else if (!strcmp(argv[i], "-i")) { /* case-insensitive item matching */
             fstrncmp = strncasecmp;
             fstrstr = cistrstr;
-        } else if (!strcmp(argv[i], "-vi")) {
+        } else if (!enforces_no_vi_mode && !strcmp(argv[i], "-vi")) {
             vi_mode = 1;
             using_vi_mode = start_mode;
             global_esc.ksym = XK_Escape;
             global_esc.state = 0;
-        } else if (!strcmp(argv[i], "-P")) /* is the input a password */
+        } else if (!strcmp(argv[i], "-P")) { /* is the input a password */
+            vi_mode = 0;
+            using_vi_mode = 0;
             passwd = 1;
+            enforces_no_vi_mode = true;
+        } else if (i + 1 == argc)
+            usage();
         else if (!strcmp(argv[i], "-r")) /* reject input which results in no match */
             reject_no_match = 1;
         else if (i + 1 == argc)
