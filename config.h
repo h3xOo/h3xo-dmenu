@@ -18,7 +18,7 @@ static const char* prompt = NULL; /* -p  option; prompt to the left of input fie
 static const char* colors[SchemeLast][2] = {
     /*     fg         bg       */
     [SchemeNorm] = { "#BBBBBB", "#222222" },
-    [SchemeSel] = { "#EEEEEE", "#AA758C" }, // check colors from dwm's config.h
+    [SchemeSel] = { "#EEEEEE", "#AA758C" },
     [SchemeOut] = { "#000000", "#00FFFF" },
 };
 static const unsigned int alphas[SchemeLast][2] = {
