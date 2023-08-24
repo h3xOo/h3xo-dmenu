@@ -31,6 +31,8 @@
 enum {
     SchemeNorm,
     SchemeSel,
+    SchemeNormHighlight,
+    SchemeSelHighlight,
     SchemeOut,
     SchemeLast
 }; /* color schemes */
@@ -181,8 +183,44 @@ static char* cistrstr(const char* h, const char* n)
     return NULL;
 }
 
+static void drawhighlights(struct item *item, int x, int y, int maxw) {
+    char restorechar, tokens[sizeof text], *highlight,  *token;
+    int indentx, highlightlen;
+
+    drw_setscheme(drw, scheme[item == sel ? SchemeSelHighlight : SchemeNormHighlight]);
+    strcpy(tokens, text);
+    for (token = strtok(tokens, " "); token; token = strtok(NULL, " ")) {
+        highlight = fstrstr(item->text, token);
+        while (highlight) {
+            // Move item str end, calc width for highlight indent, & restore
+            highlightlen = highlight - item->text;
+            restorechar = *highlight;
+            item->text[highlightlen] = '\0';
+            indentx = TEXTW(item->text);
+            item->text[highlightlen] = restorechar;
+
+            // Move highlight str end, draw highlight, & restore
+            restorechar = highlight[strlen(token)];
+            highlight[strlen(token)] = '\0';
+            if (indentx - (lrpad / 2) - 1 < maxw)
+                drw_text(
+                    drw,
+                    x + indentx - (lrpad / 2) - 1,
+                    y,
+                    MIN(maxw - indentx, TEXTW(highlight) - lrpad),
+                    bh, 0, highlight, 0
+            );
+            highlight[strlen(token)] = restorechar;
+
+            if (strlen(highlight) - strlen(token) < strlen(token)) break;
+            highlight = fstrstr(highlight + strlen(token), token);
+        }
+    }
+}
+
 static int drawitem(struct item* item, int x, int y, int w)
 {
+    int r;
     if (item == sel)
         drw_setscheme(drw, scheme[SchemeSel]);
     else if (item->out)
@@ -190,7 +228,9 @@ static int drawitem(struct item* item, int x, int y, int w)
     else
         drw_setscheme(drw, scheme[SchemeNorm]);
 
-    return drw_text(drw, x, y, w, bh, lrpad / 2, item->text, 0);
+    r = drw_text(drw, x, y, w, bh, lrpad / 2, item->text, 0);
+    drawhighlights(item, x, y, w);
+    return r;
 }
 
 static void drawmenu(void)
