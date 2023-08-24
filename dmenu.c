@@ -28,10 +28,12 @@
 #define OPAQUE 0xFFU
 
 /* enums */
-enum { SchemeNorm,
+enum {
+    SchemeNorm,
     SchemeSel,
     SchemeOut,
-    SchemeLast }; /* color schemes */
+    SchemeLast
+}; /* color schemes */
 
 struct item {
     char* text;
@@ -904,9 +906,11 @@ static void setup(void)
     swa.border_pixel = 0;
     swa.colormap = cmap;
     swa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask | ButtonPressMask;
-    win = XCreateWindow(dpy, root, x, y, mw, mh, 0, depth, InputOutput, visual,
+    win = XCreateWindow(dpy, root, x, y, mw, mh, border_width, depth, InputOutput, visual,
         CWOverrideRedirect | CWBackPixel | CWColormap | CWEventMask | CWBorderPixel,
         &swa);
+    if (border_width)
+        XSetWindowBorder(dpy, win, scheme[SchemeSel][ColBg].pixel);
     XSetClassHint(dpy, win, &ch);
 
     /* input methods */
@@ -933,7 +937,7 @@ static void setup(void)
 
 static void usage(void)
 {
-    die("usage: dmenu [-bcfiv] [-l lines] [-p prompt] [-fn font] [-m monitor]\n"
+    die("usage: dmenu [-bcfiv] [-l lines] [-p prompt] [-bw border_width] [-fn font] [-m monitor]\n"
         "             [-nb color] [-nf color] [-sb color] [-sf color] [-w "
         "windowid]");
 }
@@ -1008,6 +1012,8 @@ int main(int argc, char* argv[])
             colors[SchemeSel][ColFg] = argv[++i];
         else if (!strcmp(argv[i], "-w")) /* embedding window id */
             embed = argv[++i];
+        else if (!strcmp(argv[i], "-bw")) /* border width */
+            border_width = atoi(argv[++i]);
         else
             usage();
 
