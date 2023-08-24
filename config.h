@@ -12,8 +12,6 @@ static const char* fonts[] = {
     "SauceCodePro Nerd Font:size=12",
     "JoyPixels:pixelsize=12:antialias=true:autohint=true"
 };
-static const unsigned int bgalpha = 0xff;
-static const unsigned int fgalpha = OPAQUE;
 static const char* prompt = NULL; /* -p  option; prompt to the left of input field */
 static const char* colors[SchemeLast][2] = {
     /*     fg         bg       */
@@ -22,12 +20,6 @@ static const char* colors[SchemeLast][2] = {
 	[SchemeSelHighlight] = { "#ffc978", "#005577" },
 	[SchemeNormHighlight] = { "#ffc978", "#222222" },
     [SchemeOut] = { "#000000", "#00FFFF" },
-};
-static const unsigned int alphas[SchemeLast][2] = {
-    /*		fgalpha		bgalphga	*/
-    [SchemeNorm] = { fgalpha, bgalpha },
-    [SchemeSel] = { fgalpha, bgalpha },
-    [SchemeOut] = { fgalpha, bgalpha },
 };
 
 /* -l option; if nonzero, dmenu uses vertical list with given number of lines
