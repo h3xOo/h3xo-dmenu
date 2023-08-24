@@ -20,6 +20,7 @@ static const char* colors[SchemeLast][2] = {
 	[SchemeSelHighlight] = { "#ffc978", "#005577" },
 	[SchemeNormHighlight] = { "#ffc978", "#222222" },
     [SchemeOut] = { "#000000", "#00FFFF" },
+	[SchemeCursor] = { "#222222", "#bbbbbb"},
 };
 
 /* -l option; if nonzero, dmenu uses vertical list with given number of lines
@@ -31,6 +32,18 @@ static unsigned int lines = 15;
  * for example: " /?\"&[]"
  */
 static const char worddelimiters[] = " ";
+
+/*
+ * -vi option; if nonzero, vi mode is always enabled and can be
+ * accessed with the global_esc keysym + mod mask
+ */
+static unsigned int vi_mode = 1;
+static const unsigned int start_mode = 1;			/* mode to use when -vi is passed. 0 = insert mode, 1 = normal mode */
+static Key global_esc = { XK_Escape, 0 };	/* escape key when vi mode is not enabled explicitly */
+static const Key quit_keys[] = {
+	/* keysym	modifier */
+	{ XK_q,		0 }
+};
 
 /* Size of the window border */
 static unsigned int border_width = 2;
