@@ -20,8 +20,7 @@ static int match = 0;
 static int flag[26];
 static struct stat old, new;
 
-static void test(const char* path, const char* name)
-{
+static void test(const char* path, const char* name) {
     struct stat st, ln;
 
     if ((!stat(path, &st) && (FLAG('a') || name[0] != '.') /* hidden files */
@@ -48,8 +47,7 @@ static void test(const char* path, const char* name)
     }
 }
 
-static void usage(void)
-{
+static void usage(void) {
     fprintf(stderr,
         "usage: %s [-abcdefghlpqrsuvwx] "
         "[-n file] [-o file] [file...]\n",
@@ -57,8 +55,7 @@ static void usage(void)
     exit(2); /* like test(1) return > 1 on error */
 }
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
     struct dirent* d;
     char path[PATH_MAX], *line = NULL, *file;
     size_t linesiz = 0;

@@ -21,8 +21,8 @@
 #include "drw.h"
 #include "util.h"
 
-#define INTERSECT(x, y, w, h, r) \
-    (MAX(0, MIN((x) + (w), (r).x_org + (r).width) - MAX((x), (r).x_org)) && MAX(0, MIN((y) + (h), (r).y_org + (r).height) - MAX((y), (r).y_org)))
+#define INTERSECT(x, y, w, h, r) (MAX(0, MIN((x) + (w), (r).x_org + (r).width) - MAX((x), (r).x_org)) \
+                                    && MAX(0, MIN((y) + (h), (r).y_org + (r).height) - MAX((y), (r).y_org)))
 #define TEXTW(X) (drw_fontset_getwidth(drw, (X)) + lrpad)
 
 /* enums */
@@ -75,15 +75,13 @@ static Clr* scheme[SchemeLast];
 static int (*fstrncmp)(const char*, const char*, size_t) = strncmp;
 static char* (*fstrstr)(const char*, const char*) = strstr;
 
-static unsigned int textw_clamp(const char* str, unsigned int n)
-{
+static unsigned int textw_clamp(const char* str, unsigned int n) {
     unsigned int w = drw_fontset_getwidth_clamp(drw, str, n) + lrpad;
     return MIN(w, n);
 }
 
 static void appenditem(struct item* item, struct item** list,
-    struct item** last)
-{
+    struct item** last) {
     if (*last)
         (*last)->right = item;
     else
@@ -94,8 +92,7 @@ static void appenditem(struct item* item, struct item** list,
     *last = item;
 }
 
-static void calcoffsets(void)
-{
+static void calcoffsets(void) {
     int i, n;
 
     if (lines > 0)
@@ -118,23 +115,29 @@ static int max_textw(void) {
     return len;
 }
 
-static void cleanup(void)
-{
+static void cleanup(void) {
     size_t i;
 
     XUngrabKey(dpy, AnyKey, AnyModifier, root);
-    for (i = 0; i < SchemeLast; i++)
+    for (i = 0; i < SchemeLast; i++) {
         free(scheme[i]);
-    for (i = 0; items && items[i].text; ++i)
+        scheme[i] = NULL;
+    }
+
+    for (i = 0; items && items[i].text; ++i) {
         free(items[i].text);
+        items[i].text = NULL;
+    }
     free(items);
+    items = NULL;
     drw_free(drw);
+    drw = NULL;
     XSync(dpy, False);
     XCloseDisplay(dpy);
+    dpy = NULL;
 }
 
-static char* cistrstr(const char* h, const char* n)
-{
+static char* cistrstr(const char* h, const char* n) {
     size_t i = 0;
 
     if (!n[0])
@@ -185,8 +188,7 @@ static void drawhighlights(struct item *item, int x, int y, int maxw) {
     }
 }
 
-static int drawitem(struct item* item, int x, int y, int w)
-{
+static int drawitem(struct item* item, int x, int y, int w) {
     int r;
     if (item == sel)
         drw_setscheme(drw, scheme[SchemeSel]);
@@ -200,8 +202,7 @@ static int drawitem(struct item* item, int x, int y, int w)
     return r;
 }
 
-static void drawmenu(void)
-{
+static void drawmenu(void) {
     unsigned int curpos;
     struct item* item;
     int x = 0, y = 0, w;
@@ -222,6 +223,7 @@ static void drawmenu(void)
         memset(censort, '.', strlen(text));
         drw_text(drw, x, 0, w, bh, lrpad / 2, censort, 0);
         free(censort);
+        censort = NULL;
     } else {
         drw_text(drw, x, 0, w, bh, lrpad / 2, text, 0);
     }
@@ -265,8 +267,7 @@ static void drawmenu(void)
     drw_map(drw, win, 0, 0, mw, mh);
 }
 
-static void grabfocus(void)
-{
+static void grabfocus(void) {
     struct timespec ts = { .tv_sec = 0, .tv_nsec = 10000000 };
     Window focuswin;
     int i, revertwin;
@@ -281,8 +282,7 @@ static void grabfocus(void)
     die("cannot grab focus");
 }
 
-static void grabkeyboard(void)
-{
+static void grabkeyboard(void) {
     struct timespec ts = { .tv_sec = 0, .tv_nsec = 1000000 };
     int i;
 
@@ -300,8 +300,7 @@ static void grabkeyboard(void)
     die("cannot grab keyboard");
 }
 
-static void match(void)
-{
+static void match(void) {
     static char** tokv = NULL;
     static int tokn = 0;
 
@@ -353,8 +352,7 @@ static void match(void)
     calcoffsets();
 }
 
-static void insert(const char* str, ssize_t n)
-{
+static void insert(const char* str, ssize_t n) {
     if (strlen(text) + n > sizeof text - 1)
         return;
 
@@ -379,8 +377,7 @@ static void insert(const char* str, ssize_t n)
     }
 }
 
-static size_t nextrune(int inc)
-{
+static size_t nextrune(int inc) {
     ssize_t n;
 
     /* return location of next utf8 rune in the given direction (+1 or -1) */
@@ -389,8 +386,7 @@ static size_t nextrune(int inc)
     return n;
 }
 
-static void movewordedge(int dir)
-{
+static void movewordedge(int dir) {
     if (dir < 0) { /* move cursor to the start of the word*/
         while (cursor > 0 && strchr(worddelimiters, text[nextrune(-1)]))
             cursor = nextrune(-1);
@@ -578,8 +574,7 @@ draw:
 }
 
 
-static void keypress(XKeyEvent* ev)
-{
+static void keypress(XKeyEvent* ev) {
     char buf[64];
     int len;
     KeySym ksym = NoSymbol;
@@ -822,8 +817,7 @@ draw:
     drawmenu();
 }
 
-static void buttonpress(XEvent* e)
-{
+static void buttonpress(XEvent* e) {
     struct item* item;
     XButtonPressedEvent* ev = &e->xbutton;
     int x = 0, y = 0, h = bh, w;
@@ -931,8 +925,7 @@ static void buttonpress(XEvent* e)
     }
 }
 
-static void paste(void)
-{
+static void paste(void) {
     char *p, *q;
     int di;
     unsigned long dl;
@@ -946,14 +939,14 @@ static void paste(void)
         && p) {
         insert(p, (q = strchr(p, '\n')) ? q - p : (ssize_t)strlen(p));
         XFree(p);
+        p = NULL;
     }
     if (using_vi_mode && text[cursor] == '\0')
         --cursor;
     drawmenu();
 }
 
-static void readstdin(void)
-{
+static void readstdin(void) {
     char* line = NULL;
     size_t i, itemsiz = 0, linesiz = 0;
     ssize_t len;
@@ -977,13 +970,13 @@ static void readstdin(void)
         items[i].out = 0;
     }
     free(line);
+    line = NULL;
     if (items)
         items[i].text = NULL;
     lines = MIN(lines, i);
 }
 
-static void run(void)
-{
+static void run(void) {
     XEvent ev;
 
     while (!XNextEvent(dpy, &ev)) {
@@ -1022,8 +1015,7 @@ static void run(void)
     }
 }
 
-static void setup(void)
-{
+static void setup(void) {
     int x, y, i, j;
     unsigned int du;
     XSetWindowAttributes swa;
@@ -1057,8 +1049,10 @@ static void setup(void)
         else if (w != root && w != PointerRoot && w != None) {
             /* find top-level window containing current input focus */
             do {
-                if (XQueryTree(dpy, (pw = w), &dw, &w, &dws, &du) && dws)
+                if (XQueryTree(dpy, (pw = w), &dw, &w, &dws, &du) && dws) {
                     XFree(dws);
+                    dws = NULL;
+                }
             } while (w != root && w != pw);
             /* find xinerama screen with which the window intersects
              * most */
@@ -1078,17 +1072,18 @@ static void setup(void)
                 if (INTERSECT(x, y, 1, 1, info[i]) != 0)
                     break;
 
-		if (centered) {
-			mw = MIN(MAX(max_textw() + promptw, min_width), info[i].width);
-			x = info[i].x_org + ((info[i].width  - mw) / 2);
-			y = info[i].y_org + ((info[i].height - mh) / 2);
-		} else {
-			x = info[i].x_org;
-			y = info[i].y_org + (topbar ? 0 : info[i].height - mh);
-			mw = info[i].width;
-		}
+        if (centered) {
+            mw = MIN(MAX(max_textw() + promptw, min_width), info[i].width);
+            x = info[i].x_org + ((info[i].width  - mw) / 2);
+            y = info[i].y_org + ((info[i].height - mh) / 2);
+        } else {
+            x = info[i].x_org;
+            y = info[i].y_org + (topbar ? 0 : info[i].height - mh);
+            mw = info[i].width;
+        }
 
         XFree(info);
+        info = NULL;
     } else
 #endif
     {
@@ -1142,15 +1137,13 @@ static void setup(void)
     drawmenu();
 }
 
-static void usage(void)
-{
+static void usage(void) {
     die("usage: dmenu [-bcfiv] [-vi] [-l lines] [-p prompt] [-bw border_width] [-fn font] [-m monitor]\n"
         "             [-nb color] [-nf color] [-sb color] [-sf color] [-w "
         "windowid]");
 }
 
-void read_Xresources(void)
-{
+static void read_Xresources(void) {
     XrmInitialize();
 
     char* xrm;
@@ -1174,8 +1167,7 @@ void read_Xresources(void)
     }
 }
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
     XWindowAttributes wa;
     int i, fast = 0;
 
