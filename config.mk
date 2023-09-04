@@ -25,7 +25,7 @@ LIBS = -L$(X11LIB) -lX11 $(XINERAMALIBS) $(FREETYPELIBS)
 
 # flags
 CPPFLAGS = -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L -DVERSION=\"$(VERSION)\" $(XINERAMAFLAGS)
-CFLAGS   = -std=c17 -pedantic -Wall -Wextra $(INCS) $(CPPFLAGS) -O2
+CFLAGS   = -std=c17 -O2 -pedantic -Wall -Wextra -Wunused $(INCS) $(CPPFLAGS)
 LDFLAGS  = $(LIBS)
 
 # compiler and linker
