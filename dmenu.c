@@ -31,6 +31,7 @@ enum {
     SchemeNormHighlight,
     SchemeSelHighlight,
     SchemeOut,
+    SchemeOutHighlight,
     SchemeLast
 }; /* color schemes */
 
@@ -148,21 +149,22 @@ static void drawhighlights(struct item *item, int x, int y, int maxw) {
     char restorechar, tokens[sizeof text], *highlight,  *token;
     int indentx, highlightlen;
 
-    drw_setscheme(drw, scheme[item == sel ? SchemeSelHighlight : SchemeNormHighlight]);
+    drw_setscheme(drw, scheme[item == sel ? SchemeSelHighlight : item->out ? SchemeOutHighlight : SchemeNormHighlight]);
     strcpy(tokens, text);
     for (token = strtok(tokens, " "); token; token = strtok(NULL, " ")) {
         highlight = fstrstr(item->text, token);
         while (highlight) {
-            // Move item str end, calc width for highlight indent, & restore
+            /* Move item str end, calc width for highlight indent, & restore */
             highlightlen = highlight - item->text;
             restorechar = *highlight;
             item->text[highlightlen] = '\0';
             indentx = TEXTW(item->text);
             item->text[highlightlen] = restorechar;
 
-            // Move highlight str end, draw highlight, & restore
-            restorechar = highlight[strlen(token)];
-            highlight[strlen(token)] = '\0';
+            /* Move highlight str end, draw highlight, & restore */
+            size_t token_len = strlen(token);
+            restorechar = highlight[token_len];
+            highlight[token_len] = '\0';
             if (indentx - (lrpad / 2) - 1 < maxw)
                 drw_text(
                     drw,
@@ -171,16 +173,16 @@ static void drawhighlights(struct item *item, int x, int y, int maxw) {
                     MIN(maxw - indentx, TEXTW(highlight) - lrpad),
                     bh, 0, highlight, 0
             );
-            highlight[strlen(token)] = restorechar;
+            highlight[token_len] = restorechar;
 
-            if (strlen(highlight) - strlen(token) < strlen(token)) break;
-            highlight = fstrstr(highlight + strlen(token), token);
+            if (strlen(highlight) - token_len < token_len)
+                break;
+            highlight = fstrstr(highlight + token_len, token);
         }
     }
 }
 
 static int drawitem(struct item* item, int x, int y, int w) {
-    int r;
     if (item == sel)
         drw_setscheme(drw, scheme[SchemeSel]);
     else if (item->out)
@@ -188,7 +190,7 @@ static int drawitem(struct item* item, int x, int y, int w) {
     else
         drw_setscheme(drw, scheme[SchemeNorm]);
 
-    r = drw_text(drw, x, y, w, bh, lrpad / 2, item->text, 0);
+    int r = drw_text(drw, x, y, w, bh, lrpad / 2, item->text, 0);
     drawhighlights(item, x, y, w);
     return r;
 }
