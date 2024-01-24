@@ -1,4 +1,7 @@
 /* See LICENSE file for copyright and license details. */
+#include <X11/Xatom.h>
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
 #include <ctype.h>
 #include <locale.h>
 #include <stdio.h>
@@ -7,21 +10,17 @@
 #include <strings.h>
 #include <time.h>
 #include <unistd.h>
-
-#include <X11/Xatom.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
 #ifdef XINERAMA
-#include <X11/extensions/Xinerama.h>
+#    include <X11/extensions/Xinerama.h>
 #endif
+#include "drw.h"
+#include "util.h"
 #include <X11/Xft/Xft.h>
 #include <X11/Xresource.h>
 
-#include "drw.h"
-#include "util.h"
-
-#define INTERSECT(x, y, w, h, r) (MAX(0, MIN((x) + (w), (r).x_org + (r).width) - MAX((x), (r).x_org)) \
-                                    * MAX(0, MIN((y) + (h), (r).y_org + (r).height) - MAX((y), (r).y_org)))
+#define INTERSECT(x, y, w, h, r)                                         \
+    (MAX(0, MIN((x) + (w), (r).x_org + (r).width) - MAX((x), (r).x_org)) \
+     * MAX(0, MIN((y) + (h), (r).y_org + (r).height) - MAX((y), (r).y_org)))
 #define TEXTW(X) (drw_fontset_getwidth(drw, (X)) + lrpad)
 
 /* enums */
@@ -36,44 +35,43 @@ enum {
 }; /* color schemes */
 
 struct item {
-    char* text;
+    char *text;
     struct item *left, *right;
     int out;
 };
 
 static char text[BUFSIZ] = "";
-static char* embed;
+static char *embed;
 static int bh, mw, mh;
 static int inputw = 0, promptw, passwd = 0;
 static int lrpad; /* sum of left and right padding */
 static int reject_no_match = 0;
 static size_t cursor;
-static struct item* items = NULL;
+static struct item *items = NULL;
 static struct item *matches, *matchend;
 static struct item *prev, *curr, *next, *sel;
 static int mon = -1, screen;
 
 static Atom clip, utf8;
-static Display* dpy;
+static Display *dpy;
 static Window root, parentwin, win;
 static XIC xic;
 
-static Drw* drw;
+static Drw *drw;
 
-static Clr* scheme[SchemeLast];
+static Clr *scheme[SchemeLast];
 
 #include "config.h"
 
-static int (*fstrncmp)(const char*, const char*, size_t) = strncmp;
-static char* (*fstrstr)(const char*, const char*) = strstr;
+static int (*fstrncmp)(char const *, char const *, size_t) = strncmp;
+static char *(*fstrstr)(char const *, char const *) = strstr;
 
-static unsigned int textw_clamp(const char* str, unsigned int n) {
+static unsigned int textw_clamp(char const *str, unsigned int n) {
     unsigned int w = drw_fontset_getwidth_clamp(drw, str, n) + lrpad;
     return MIN(w, n);
 }
 
-static void appenditem(struct item* item, struct item** list,
-    struct item** last) {
+static void appenditem(struct item *item, struct item **list, struct item **last) {
     if (*last)
         (*last)->right = item;
     else
@@ -102,7 +100,7 @@ static void calcoffsets(void) {
 
 static int max_textw(void) {
     int len = 0;
-    for (struct item* item = items; item && item->text; item++)
+    for (struct item *item = items; item && item->text; item++)
         len = MAX(TEXTW(item->text), len);
     return len;
 }
@@ -129,24 +127,23 @@ static void cleanup(void) {
     dpy = NULL;
 }
 
-static char* cistrstr(const char* h, const char* n) {
+static char *cistrstr(char const *h, char const *n) {
     size_t i = 0;
 
     if (!n[0])
-        return (char*)h;
+        return (char *)h;
 
     for (; *h; h++) {
-        for (i = 0; n[i] && tolower((unsigned char)n[i]) == tolower((unsigned char)h[i]);
-             ++i)
+        for (i = 0; n[i] && tolower((unsigned char)n[i]) == tolower((unsigned char)h[i]); ++i)
             ;
         if (n[i] == '\0')
-            return (char*)h;
+            return (char *)h;
     }
     return NULL;
 }
 
 static void drawhighlights(struct item *item, int x, int y, int maxw) {
-    char restorechar, tokens[sizeof text], *highlight,  *token;
+    char restorechar, tokens[sizeof text], *highlight, *token;
     int indentx, highlightlen;
 
     drw_setscheme(drw, scheme[item == sel ? SchemeSelHighlight : item->out ? SchemeOutHighlight : SchemeNormHighlight]);
@@ -166,13 +163,8 @@ static void drawhighlights(struct item *item, int x, int y, int maxw) {
             restorechar = highlight[token_len];
             highlight[token_len] = '\0';
             if (indentx - (lrpad / 2) - 1 < maxw)
-                drw_text(
-                    drw,
-                    x + indentx - (lrpad / 2) - 1,
-                    y,
-                    MIN(maxw - indentx, TEXTW(highlight) - lrpad),
-                    bh, 0, highlight, 0
-            );
+                drw_text(drw, x + indentx - (lrpad / 2) - 1, y, MIN(maxw - indentx, TEXTW(highlight) - lrpad), bh, 0,
+                         highlight, 0);
             highlight[token_len] = restorechar;
 
             if (strlen(highlight) - token_len < token_len)
@@ -182,7 +174,7 @@ static void drawhighlights(struct item *item, int x, int y, int maxw) {
     }
 }
 
-static int drawitem(struct item* item, int x, int y, int w) {
+static int drawitem(struct item *item, int x, int y, int w) {
     if (item == sel)
         drw_setscheme(drw, scheme[SchemeSel]);
     else if (item->out)
@@ -197,9 +189,9 @@ static int drawitem(struct item* item, int x, int y, int w) {
 
 static void drawmenu(void) {
     unsigned int curpos;
-    struct item* item;
+    struct item *item;
     int x = 0, y = 0, w;
-    char* censort;
+    char *censort;
 
     drw_setscheme(drw, scheme[SchemeNorm]);
     drw_rect(drw, 0, 0, mw, mh, 1, 1);
@@ -241,8 +233,7 @@ static void drawmenu(void) {
         }
         x += w;
         for (item = curr; item != next; item = item->right)
-            x = drawitem(item, x, 0,
-                textw_clamp(item->text, mw - x - TEXTW(">")));
+            x = drawitem(item, x, 0, textw_clamp(item->text, mw - x - TEXTW(">")));
         if (next) {
             w = TEXTW(">");
             drw_setscheme(drw, scheme[SchemeNorm]);
@@ -276,9 +267,7 @@ static void grabkeyboard(void) {
     /* try to grab keyboard, we may have to wait for another process to ungrab
      */
     for (i = 0; i < 1000; i++) {
-        if (XGrabKeyboard(dpy, DefaultRootWindow(dpy), True, GrabModeAsync,
-                GrabModeAsync, CurrentTime)
-            == GrabSuccess)
+        if (XGrabKeyboard(dpy, DefaultRootWindow(dpy), True, GrabModeAsync, GrabModeAsync, CurrentTime) == GrabSuccess)
             return;
         nanosleep(&ts, NULL);
     }
@@ -286,7 +275,7 @@ static void grabkeyboard(void) {
 }
 
 static void match(void) {
-    static char** tokv = NULL;
+    static char **tokv = NULL;
     static int tokn = 0;
 
     char buf[sizeof text], *s;
@@ -337,7 +326,7 @@ static void match(void) {
     calcoffsets();
 }
 
-static void insert(const char* str, ssize_t n) {
+static void insert(char const *str, ssize_t n) {
     if (strlen(text) + n > sizeof text - 1)
         return;
 
@@ -385,7 +374,7 @@ static void movewordedge(int dir) {
     }
 }
 
-static void keypress(XKeyEvent* ev) {
+static void keypress(XKeyEvent *ev) {
     char buf[64];
     int len;
     KeySym ksym = NoSymbol;
@@ -460,8 +449,7 @@ static void keypress(XKeyEvent* ev) {
             break;
         case XK_y: /* paste selection */
         case XK_Y:
-            XConvertSelection(dpy, (ev->state & ShiftMask) ? clip : XA_PRIMARY,
-                utf8, utf8, win, CurrentTime);
+            XConvertSelection(dpy, (ev->state & ShiftMask) ? clip : XA_PRIMARY, utf8, utf8, win, CurrentTime);
             return;
         case XK_Left:
             movewordedge(-1);
@@ -511,7 +499,7 @@ static void keypress(XKeyEvent* ev) {
 
     switch (ksym) {
     default:
-    insert:
+insert:
         if (!iscntrl((unsigned char)*buf))
             insert(buf, len);
         break;
@@ -616,9 +604,9 @@ draw:
     drawmenu();
 }
 
-static void buttonpress(XEvent* e) {
-    struct item* item;
-    XButtonPressedEvent* ev = &e->xbutton;
+static void buttonpress(XEvent *e) {
+    struct item *item;
+    XButtonPressedEvent *ev = &e->xbutton;
     int x = 0, y = 0, h = bh, w;
 
     if (ev->window != win)
@@ -637,15 +625,16 @@ static void buttonpress(XEvent* e) {
     /* left-click on input: clear input,
      * NOTE: if there is no left-arrow the space for < is reserved so
      *       add that to the input width */
-    if (ev->button == Button1 && ((lines <= 0 && ev->x >= 0 && ev->x <= x + w + ((!prev || !curr->left) ? TEXTW("<") : 0)) || (lines > 0 && ev->y >= y && ev->y <= y + h))) {
+    if (ev->button == Button1
+        && ((lines <= 0 && ev->x >= 0 && ev->x <= x + w + ((!prev || !curr->left) ? TEXTW("<") : 0))
+            || (lines > 0 && ev->y >= y && ev->y <= y + h))) {
         insert(NULL, -cursor);
         drawmenu();
         return;
     }
     /* middle-mouse click: paste selection */
     if (ev->button == Button2) {
-        XConvertSelection(dpy, (ev->state & ShiftMask) ? clip : XA_PRIMARY,
-            utf8, utf8, win, CurrentTime);
+        XConvertSelection(dpy, (ev->state & ShiftMask) ? clip : XA_PRIMARY, utf8, utf8, win, CurrentTime);
         drawmenu();
         return;
     }
@@ -731,9 +720,8 @@ static void paste(void) {
     Atom da;
 
     /* we have been given the current selection, now insert it into input */
-    if (XGetWindowProperty(dpy, win, utf8, 0, (sizeof text / 4) + 1, False,
-            utf8, &da, &di, &dl, &dl,
-            (unsigned char**)&p)
+    if (XGetWindowProperty(dpy, win, utf8, 0, (sizeof text / 4) + 1, False, utf8, &da, &di, &dl, &dl,
+                           (unsigned char **)&p)
             == Success
         && p) {
         insert(p, (q = strchr(p, '\n')) ? q - p : (ssize_t)strlen(p));
@@ -744,7 +732,7 @@ static void paste(void) {
 }
 
 static void readstdin(void) {
-    char* line = NULL;
+    char *line = NULL;
     size_t i, itemsiz = 0, linesiz = 0;
     ssize_t len;
 
@@ -821,7 +809,7 @@ static void setup(void) {
     XWindowAttributes wa;
     XClassHint ch = { "dmenu", "dmenu" };
 #ifdef XINERAMA
-    XineramaScreenInfo* info;
+    XineramaScreenInfo *info;
     Window pw;
     int a, di, n, area = 0;
 #endif
@@ -855,9 +843,7 @@ static void setup(void) {
              * most */
             if (XGetWindowAttributes(dpy, pw, &wa))
                 for (j = 0; j < n; j++)
-                    if ((a = INTERSECT(wa.x, wa.y, wa.width, wa.height,
-                             info[j]))
-                        > area) {
+                    if ((a = INTERSECT(wa.x, wa.y, wa.width, wa.height, info[j])) > area) {
                         area = a;
                         i = j;
                     }
@@ -871,7 +857,7 @@ static void setup(void) {
 
         if (centered) {
             mw = MIN(MAX(max_textw() + promptw, min_width), info[i].width);
-            x = info[i].x_org + ((info[i].width  - mw) / 2);
+            x = info[i].x_org + ((info[i].width - mw) / 2);
             y = info[i].y_org + ((info[i].height - mh) / 2);
         } else {
             x = info[i].x_org;
@@ -887,15 +873,15 @@ static void setup(void) {
         if (!XGetWindowAttributes(dpy, parentwin, &wa))
             die("could not get embedding window attributes: 0x%lx", parentwin);
 
-		if (centered) {
-			mw = MIN(MAX(max_textw() + promptw, min_width), wa.width);
-			x = (wa.width  - mw) / 2;
-			y = (wa.height - mh) / 2;
-		} else {
-			x = 0;
-			y = topbar ? 0 : wa.height - mh;
-			mw = wa.width;
-		}
+        if (centered) {
+            mw = MIN(MAX(max_textw() + promptw, min_width), wa.width);
+            x = (wa.width - mw) / 2;
+            y = (wa.height - mh) / 2;
+        } else {
+            x = 0;
+            y = topbar ? 0 : wa.height - mh;
+            mw = wa.width;
+        }
     }
     promptw = (prompt && *prompt) ? TEXTW(prompt) - lrpad / 4 : 0;
     inputw = mw / 3; /* input width: ~33% of monitor width */
@@ -905,9 +891,8 @@ static void setup(void) {
     swa.override_redirect = True;
     swa.background_pixel = scheme[SchemeNorm][ColBg].pixel;
     swa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask | ButtonPressMask;
-    win = XCreateWindow(dpy, root, x, y, mw, mh, border_width,
-                    CopyFromParent, CopyFromParent, CopyFromParent,
-                    CWOverrideRedirect | CWBackPixel | CWEventMask, &swa);
+    win = XCreateWindow(dpy, root, x, y, mw, mh, border_width, CopyFromParent, CopyFromParent, CopyFromParent,
+                        CWOverrideRedirect | CWBackPixel | CWEventMask, &swa);
     if (border_width)
         XSetWindowBorder(dpy, win, scheme[SchemeSel][ColBg].pixel);
     XSetClassHint(dpy, win, &ch);
@@ -916,8 +901,8 @@ static void setup(void) {
     if ((xim = XOpenIM(dpy, NULL, NULL, NULL)) == NULL)
         die("XOpenIM failed: could not open input device");
 
-    xic = XCreateIC(xim, XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
-        XNClientWindow, win, XNFocusWindow, win, NULL);
+    xic = XCreateIC(xim, XNInputStyle, XIMPreeditNothing | XIMStatusNothing, XNClientWindow, win, XNFocusWindow, win,
+                    NULL);
 
     XMapRaised(dpy, win);
     if (embed) {
@@ -943,9 +928,9 @@ static void usage(void) {
 static void read_Xresources(void) {
     XrmInitialize();
 
-    char* xrm;
+    char *xrm;
     if ((xrm = XResourceManagerString(drw->dpy))) {
-        char* type;
+        char *type;
         XrmDatabase xdb = XrmGetStringDatabase(xrm);
         XrmValue xval;
 
@@ -964,7 +949,7 @@ static void read_Xresources(void) {
     }
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     XWindowAttributes wa;
     int i, fast = 0;
 
@@ -977,8 +962,8 @@ int main(int argc, char* argv[]) {
             topbar = 0;
         else if (!strcmp(argv[i], "-f")) /* grabs keyboard before reading stdin */
             fast = 1;
-        else if (!strcmp(argv[i], "-c"))   /* centers dmenu on screen */
-			centered = 1;
+        else if (!strcmp(argv[i], "-c")) /* centers dmenu on screen */
+            centered = 1;
         else if (!strcmp(argv[i], "-i")) { /* case-insensitive item matching */
             fstrncmp = strncasecmp;
             fstrstr = cistrstr;
