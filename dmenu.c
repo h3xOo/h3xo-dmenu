@@ -72,8 +72,7 @@ static unsigned int textw_clamp(char const *str, unsigned int n)
 	return MIN(w, n);
 }
 
-static void appenditem(struct item *item, struct item **list,
-		       struct item **last)
+static void appenditem(struct item *item, struct item **list, struct item **last)
 {
 	if (*last)
 		(*last)->right = item;
@@ -98,8 +97,7 @@ static void calcoffsets(void)
 		if ((i += (lines > 0) ? bh : textw_clamp(next->text, n)) > n)
 			break;
 	for (i = 0, prev = curr; prev && prev->left; prev = prev->left)
-		if ((i += (lines > 0) ? bh : textw_clamp(prev->left->text, n)) >
-		    n)
+		if ((i += (lines > 0) ? bh : textw_clamp(prev->left->text, n)) > n)
 			break;
 }
 
@@ -142,9 +140,7 @@ static char *cistrstr(char const *h, char const *n)
 		return (char *)h;
 
 	for (; *h; h++) {
-		for (i = 0; n[i] && tolower((unsigned char)n[i]) ==
-					    tolower((unsigned char)h[i]);
-		     ++i)
+		for (i = 0; n[i] && tolower((unsigned char)n[i]) == tolower((unsigned char)h[i]); ++i)
 			;
 		if (n[i] == '\0')
 			return (char *)h;
@@ -177,9 +173,7 @@ static void drawhighlights(struct item *item, int x, int y, int maxw)
 			highlight[token_len] = '\0';
 			if (indentx - (lrpad / 2) - 1 < maxw)
 				drw_text(drw, x + indentx - (lrpad / 2) - 1, y,
-					 MIN(maxw - indentx,
-					     TEXTW(highlight) - lrpad),
-					 bh, 0, highlight, 0);
+					 MIN(maxw - indentx, TEXTW(highlight) - lrpad), bh, 0, highlight, 0);
 			highlight[token_len] = restorechar;
 
 			if (strlen(highlight) - token_len < token_len)
@@ -250,9 +244,7 @@ static void drawmenu(void)
 		}
 		x += w;
 		for (item = curr; item != next; item = item->right)
-			x = drawitem(
-				item, x, 0,
-				textw_clamp(item->text, mw - x - TEXTW(">")));
+			x = drawitem(item, x, 0, textw_clamp(item->text, mw - x - TEXTW(">")));
 		if (next) {
 			w = TEXTW(">");
 			drw_setscheme(drw, scheme[SchemeNorm]);
@@ -288,9 +280,8 @@ static void grabkeyboard(void)
 	/* try to grab keyboard, we may have to wait for another process to ungrab
          */
 	for (i = 0; i < 1000; i++) {
-		if (XGrabKeyboard(dpy, DefaultRootWindow(dpy), True,
-				  GrabModeAsync, GrabModeAsync,
-				  CurrentTime) == GrabSuccess)
+		if (XGrabKeyboard(dpy, DefaultRootWindow(dpy), True, GrabModeAsync, GrabModeAsync, CurrentTime) ==
+		    GrabSuccess)
 			return;
 		nanosleep(&ts, NULL);
 	}
@@ -310,8 +301,7 @@ static void match(void)
 	strcpy(buf, text);
 	/* separate input text into tokens to be matched individually */
 	for (s = strtok(buf, " "); s; tokv[tokc - 1] = s, s = strtok(NULL, " "))
-		if (++tokc > tokn &&
-		    !(tokv = realloc(tokv, ++tokn * sizeof *tokv)))
+		if (++tokc > tokn && !(tokv = realloc(tokv, ++tokn * sizeof *tokv)))
 			die("cannot realloc %zu bytes:", tokn * sizeof *tokv);
 	len = tokc ? strlen(tokv[0]) : 0;
 
@@ -363,8 +353,7 @@ static void insert(char const *str, ssize_t n)
 	}
 
 	/* move existing text out of the way, insert new text, and update cursor */
-	memmove(&text[cursor + n], &text[cursor],
-		sizeof text - cursor - MAX(n, 0));
+	memmove(&text[cursor + n], &text[cursor], sizeof text - cursor - MAX(n, 0));
 	if (n > 0)
 		memcpy(&text[cursor], str, n);
 	cursor += n;
@@ -383,8 +372,7 @@ static size_t nextrune(int inc)
 	ssize_t n;
 
 	/* return location of next utf8 rune in the given direction (+1 or -1) */
-	for (n = cursor + inc; n + inc >= 0 && (text[n] & 0xc0) == 0x80;
-	     n += inc)
+	for (n = cursor + inc; n + inc >= 0 && (text[n] & 0xc0) == 0x80; n += inc)
 		;
 	return n;
 }
@@ -394,8 +382,7 @@ static void movewordedge(int dir)
 	if (dir < 0) { /* move cursor to the start of the word*/
 		while (cursor > 0 && strchr(worddelimiters, text[nextrune(-1)]))
 			cursor = nextrune(-1);
-		while (cursor > 0 &&
-		       !strchr(worddelimiters, text[nextrune(-1)]))
+		while (cursor > 0 && !strchr(worddelimiters, text[nextrune(-1)]))
 			cursor = nextrune(-1);
 	} else { /* move cursor to the end of the word */
 		while (text[cursor] && strchr(worddelimiters, text[cursor]))
@@ -474,19 +461,15 @@ static void keypress(XKeyEvent *ev)
 			insert(NULL, 0 - cursor);
 			break;
 		case XK_w: /* delete word */
-			while (cursor > 0 &&
-			       strchr(worddelimiters, text[nextrune(-1)]))
+			while (cursor > 0 && strchr(worddelimiters, text[nextrune(-1)]))
 				insert(NULL, nextrune(-1) - cursor);
-			while (cursor > 0 &&
-			       !strchr(worddelimiters, text[nextrune(-1)]))
+			while (cursor > 0 && !strchr(worddelimiters, text[nextrune(-1)]))
 				insert(NULL, nextrune(-1) - cursor);
 			break;
 		case XK_y: /* paste selection */
 		case XK_Y:
-			XConvertSelection(dpy,
-					  (ev->state & ShiftMask) ? clip
-								  : XA_PRIMARY,
-					  utf8, utf8, win, CurrentTime);
+			XConvertSelection(dpy, (ev->state & ShiftMask) ? clip : XA_PRIMARY, utf8, utf8, win,
+					  CurrentTime);
 			return;
 		case XK_Left:
 			movewordedge(-1);
@@ -664,8 +647,7 @@ static void buttonpress(XEvent *e)
          * NOTE: if there is no left-arrow the space for < is reserved so
          *       add that to the input width */
 	if (ev->button == Button1 &&
-	    ((lines <= 0 && ev->x >= 0 &&
-	      ev->x <= x + w + ((!prev || !curr->left) ? TEXTW("<") : 0)) ||
+	    ((lines <= 0 && ev->x >= 0 && ev->x <= x + w + ((!prev || !curr->left) ? TEXTW("<") : 0)) ||
 	     (lines > 0 && ev->y >= y && ev->y <= y + h))) {
 		insert(NULL, -cursor);
 		drawmenu();
@@ -673,9 +655,7 @@ static void buttonpress(XEvent *e)
 	}
 	/* middle-mouse click: paste selection */
 	if (ev->button == Button2) {
-		XConvertSelection(dpy,
-				  (ev->state & ShiftMask) ? clip : XA_PRIMARY,
-				  utf8, utf8, win, CurrentTime);
+		XConvertSelection(dpy, (ev->state & ShiftMask) ? clip : XA_PRIMARY, utf8, utf8, win, CurrentTime);
 		drawmenu();
 		return;
 	}
@@ -762,8 +742,7 @@ static void paste(void)
 	Atom da;
 
 	/* we have been given the current selection, now insert it into input */
-	if (XGetWindowProperty(dpy, win, utf8, 0, (sizeof text / 4) + 1, False,
-			       utf8, &da, &di, &dl, &dl,
+	if (XGetWindowProperty(dpy, win, utf8, 0, (sizeof text / 4) + 1, False, utf8, &da, &di, &dl, &dl,
 			       (unsigned char **)&p) == Success &&
 	    p) {
 		insert(p, (q = strchr(p, '\n')) ? q - p : (ssize_t)strlen(p));
@@ -789,8 +768,7 @@ static void readstdin(void)
 		if (i + 1 >= itemsiz) {
 			itemsiz += 256;
 			if (!(items = realloc(items, itemsiz * sizeof(*items))))
-				die("cannot realloc %zu bytes:",
-				    itemsiz * sizeof(*items));
+				die("cannot realloc %zu bytes:", itemsiz * sizeof(*items));
 		}
 		if (line[len - 1] == '\n')
 			line[len - 1] = '\0';
@@ -880,9 +858,7 @@ static void setup(void)
 		else if (w != root && w != PointerRoot && w != None) {
 			/* find top-level window containing current input focus */
 			do {
-				if (XQueryTree(dpy, (pw = w), &dw, &w, &dws,
-					       &du) &&
-				    dws) {
+				if (XQueryTree(dpy, (pw = w), &dw, &w, &dws, &du) && dws) {
 					XFree(dws);
 					dws = NULL;
 				}
@@ -891,24 +867,20 @@ static void setup(void)
                          * most */
 			if (XGetWindowAttributes(dpy, pw, &wa))
 				for (j = 0; j < n; j++)
-					if ((a = INTERSECT(wa.x, wa.y, wa.width,
-							   wa.height,
-							   info[j])) > area) {
+					if ((a = INTERSECT(wa.x, wa.y, wa.width, wa.height, info[j])) > area) {
 						area = a;
 						i = j;
 					}
 		}
 		/* no focused window is on screen, so use pointer location instead
                  */
-		if (mon < 0 && !area &&
-		    XQueryPointer(dpy, root, &dw, &dw, &x, &y, &di, &di, &du))
+		if (mon < 0 && !area && XQueryPointer(dpy, root, &dw, &dw, &x, &y, &di, &di, &du))
 			for (i = 0; i < n; i++)
 				if (INTERSECT(x, y, 1, 1, info[i]) != 0)
 					break;
 
 		if (centered) {
-			mw = MIN(MAX(max_textw() + promptw, min_width),
-				 info[i].width);
+			mw = MIN(MAX(max_textw() + promptw, min_width), info[i].width);
 			x = info[i].x_org + ((info[i].width - mw) / 2);
 			y = info[i].y_org + ((info[i].height - mh) / 2);
 		} else {
@@ -923,12 +895,10 @@ static void setup(void)
 #endif
 	{
 		if (!XGetWindowAttributes(dpy, parentwin, &wa))
-			die("could not get embedding window attributes: 0x%lx",
-			    parentwin);
+			die("could not get embedding window attributes: 0x%lx", parentwin);
 
 		if (centered) {
-			mw = MIN(MAX(max_textw() + promptw, min_width),
-				 wa.width);
+			mw = MIN(MAX(max_textw() + promptw, min_width), wa.width);
 			x = (wa.width - mw) / 2;
 			y = (wa.height - mh) / 2;
 		} else {
@@ -944,12 +914,9 @@ static void setup(void)
 	/* create menu window */
 	swa.override_redirect = True;
 	swa.background_pixel = scheme[SchemeNorm][ColBg].pixel;
-	swa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask |
-			 ButtonPressMask;
-	win = XCreateWindow(dpy, root, x, y, mw, mh, border_width,
-			    CopyFromParent, CopyFromParent, CopyFromParent,
-			    CWOverrideRedirect | CWBackPixel | CWEventMask,
-			    &swa);
+	swa.event_mask = ExposureMask | KeyPressMask | VisibilityChangeMask | ButtonPressMask;
+	win = XCreateWindow(dpy, root, x, y, mw, mh, border_width, CopyFromParent, CopyFromParent, CopyFromParent,
+			    CWOverrideRedirect | CWBackPixel | CWEventMask, &swa);
 	if (border_width)
 		XSetWindowBorder(dpy, win, scheme[SchemeSel][ColBg].pixel);
 	XSetClassHint(dpy, win, &ch);
@@ -958,14 +925,13 @@ static void setup(void)
 	if ((xim = XOpenIM(dpy, NULL, NULL, NULL)) == NULL)
 		die("XOpenIM failed: could not open input device");
 
-	xic = XCreateIC(xim, XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
-			XNClientWindow, win, XNFocusWindow, win, NULL);
+	xic = XCreateIC(xim, XNInputStyle, XIMPreeditNothing | XIMStatusNothing, XNClientWindow, win, XNFocusWindow,
+			win, NULL);
 
 	XMapRaised(dpy, win);
 	if (embed) {
 		XReparentWindow(dpy, win, parentwin, x, y);
-		XSelectInput(dpy, parentwin,
-			     FocusChangeMask | SubstructureNotifyMask);
+		XSelectInput(dpy, parentwin, FocusChangeMask | SubstructureNotifyMask);
 		if (XQueryTree(dpy, parentwin, &dw, &w, &dws, &du) && dws) {
 			for (i = 0; i < du && dws[i] != win; ++i)
 				XSelectInput(dpy, dws[i], FocusChangeMask);
@@ -996,20 +962,15 @@ static void read_Xresources(void)
 		XrmDatabase xdb = XrmGetStringDatabase(xrm);
 		XrmValue xval;
 
-		if (XrmGetResource(xdb, "dmenu.font", "*", &type, &xval) ==
-		    True) /* font or font set */
+		if (XrmGetResource(xdb, "dmenu.font", "*", &type, &xval) == True) /* font or font set */
 			fonts[0] = strdup(xval.addr);
-		if (XrmGetResource(xdb, "dmenu.color0", "*", &type, &xval) ==
-		    True) /* normal background color */
+		if (XrmGetResource(xdb, "dmenu.color0", "*", &type, &xval) == True) /* normal background color */
 			colors[SchemeNorm][ColBg] = strdup(xval.addr);
-		if (XrmGetResource(xdb, "dmenu.color4", "*", &type, &xval) ==
-		    True) /* normal foreground color */
+		if (XrmGetResource(xdb, "dmenu.color4", "*", &type, &xval) == True) /* normal foreground color */
 			colors[SchemeNorm][ColFg] = strdup(xval.addr);
-		if (XrmGetResource(xdb, "dmenu.color4", "*", &type, &xval) ==
-		    True) /* selected background color */
+		if (XrmGetResource(xdb, "dmenu.color4", "*", &type, &xval) == True) /* selected background color */
 			colors[SchemeSel][ColBg] = strdup(xval.addr);
-		if (XrmGetResource(xdb, "dmenu.color0", "*", &type, &xval) ==
-		    True) /* selected foreground color */
+		if (XrmGetResource(xdb, "dmenu.color0", "*", &type, &xval) == True) /* selected foreground color */
 			colors[SchemeSel][ColFg] = strdup(xval.addr);
 
 		XrmDestroyDatabase(xdb);
@@ -1026,39 +987,29 @@ int main(int argc, char *argv[])
 		if (!strcmp(argv[i], "-v")) { /* prints version information */
 			puts("dmenu-" VERSION);
 			exit(0);
-		} else if (
-			!strcmp(argv[i],
-				"-b")) /* appears at the bottom of the screen */
+		} else if (!strcmp(argv[i], "-b")) /* appears at the bottom of the screen */
 			topbar = 0;
-		else if (
-			!strcmp(argv[i],
-				"-f")) /* grabs keyboard before reading stdin */
+		else if (!strcmp(argv[i], "-f")) /* grabs keyboard before reading stdin */
 			fast = 1;
 		else if (!strcmp(argv[i], "-c")) /* centers dmenu on screen */
 			centered = 1;
-		else if (!strcmp(argv[i],
-				 "-i")) { /* case-insensitive item matching */
+		else if (!strcmp(argv[i], "-i")) { /* case-insensitive item matching */
 			fstrncmp = strncasecmp;
 			fstrstr = cistrstr;
-		} else if (!strcmp(argv[i],
-				   "-P")) { /* is the input a password */
+		} else if (!strcmp(argv[i], "-P")) { /* is the input a password */
 			passwd = 1;
 		} else if (i + 1 == argc)
 			usage();
-		else if (
-			!strcmp(argv[i],
-				"-r")) /* reject input which results in no match */
+		else if (!strcmp(argv[i], "-r")) /* reject input which results in no match */
 			reject_no_match = 1;
 		else if (i + 1 == argc)
 			usage();
 		/* these options take one argument */
-		else if (!strcmp(argv[i],
-				 "-l")) /* number of lines in vertical list */
+		else if (!strcmp(argv[i], "-l")) /* number of lines in vertical list */
 			lines = atoi(argv[++i]);
 		else if (!strcmp(argv[i], "-m"))
 			mon = atoi(argv[++i]);
-		else if (!strcmp(argv[i],
-				 "-p")) /* adds prompt to left of input field */
+		else if (!strcmp(argv[i], "-p")) /* adds prompt to left of input field */
 			prompt = argv[++i];
 		else if (!strcmp(argv[i], "-fn")) /* font or font set */
 			fonts[0] = argv[++i];
@@ -1066,11 +1017,9 @@ int main(int argc, char *argv[])
 			colors[SchemeNorm][ColBg] = argv[++i];
 		else if (!strcmp(argv[i], "-nf")) /* normal foreground color */
 			colors[SchemeNorm][ColFg] = argv[++i];
-		else if (!strcmp(argv[i],
-				 "-sb")) /* selected background color */
+		else if (!strcmp(argv[i], "-sb")) /* selected background color */
 			colors[SchemeSel][ColBg] = argv[++i];
-		else if (!strcmp(argv[i],
-				 "-sf")) /* selected foreground color */
+		else if (!strcmp(argv[i], "-sf")) /* selected foreground color */
 			colors[SchemeSel][ColFg] = argv[++i];
 		else if (!strcmp(argv[i], "-w")) /* embedding window id */
 			embed = argv[++i];
@@ -1088,8 +1037,7 @@ int main(int argc, char *argv[])
 	if (!embed || !(parentwin = strtol(embed, NULL, 0)))
 		parentwin = root;
 	if (!XGetWindowAttributes(dpy, parentwin, &wa))
-		die("could not get embedding window attributes: 0x%lx",
-		    parentwin);
+		die("could not get embedding window attributes: 0x%lx", parentwin);
 	drw = drw_create(dpy, screen, root, wa.width, wa.height);
 	read_Xresources();
 	if (!drw_fontset_create(drw, fonts, LENGTH(fonts)))
